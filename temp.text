@@ -1,0 +1,16 @@
+function checkWifi(){
+ var chw = new XMLHttpRequest();
+ var file = "http://www.google.com/";
+ var r = Math.round(Math.random() * 10000);
+ chw.open('HEAD', file + "?subins=" + r, false);
+ try {
+  chw.send();
+  if (xhr.status >= 200 && xhr.status < 304) {
+   return true;
+  } else {
+   return false;
+  }
+ } catch (e) {
+  return false;
+ }
+}
