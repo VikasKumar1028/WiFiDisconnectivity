@@ -1,53 +1,13 @@
-var wifiscanner = require('./lib/wifiscanner.js');
-var WiFiControl = require('wifi-control');
 var exec = require('child_process').exec;
 var util = require('util');
 var HttpClient = require('./HttpClient.js');
-
 var HttpClient2 = require('./HttpClient2.js');
-
-/* Making changes */
-wifiscanner.scan(function(err, data){
-	if (err) {
-		console.log("Error : " + err);
-		return;
-	}
-	console.log(data);
-});
-
-var settings = {
-    debug: true || false,
-    iface: 'wlan0',
-    connectionTimeout: 100000 // in ms
-  };
-
-WiFiControl.configure( settings );
-
-var _ap = {
-    ssid: "Aeris-India-Engg",
-    password: "Aer!$En@!23"
-};
-
-//var results = WiFiControl.connectToAP( _ap, function(err, response) {
-//    if (err) console.log(err);
-//    console.log(response);
-//});
-
-/*
-var new_env = util._extend(process.env, { LANG: "en" });
-    exec('sudo ifdown wlan0', new_env, function (err, stdout, stderr) {
-        if (err) {
-            console.log('iwlist error:'+err);
-            callback1(err, null);
-            return;
-        }
-        callback1(null, null);
-    }); */
 
 var wifiConnectionStatus = {};
 var new_env = util._extend(process.env, { LANG: "en" });
 console.log("Starting the application...");
 
+// eth1 is the port in which 3G dongle is attached with
 console.log("Turning off Eth1...");
 turnOffEth1(new_env);
 
@@ -87,14 +47,13 @@ function turnOffWiFi(){
     exec('sudo ifdown wlan0', new_env, function (err, stdout, stderr) {
         if (err) {
             console.log('turnOffWiFi error:'+err);
-            //callback1(err,'failed');
             return;
         }
+        console.log("wlan0 (WiFi) is down now.");
         wifiConnectionStatus["connected"] = "false";
         // if wlan0 (WiFi) interface if found to be down, then turn on eth1
         console.log("Turning on eth1...");
         turnOnEth1();
-        //callback1(null,'success');
     });
 }
 
@@ -103,10 +62,9 @@ function turnOnEth1(){
     exec('sudo ifconfig eth1 up', new_env, function (err, stdout, stderr) {
         if (err) {
             console.log('turnOnEth1 error:'+err);
-            //callback1(err,'failed');
             return;
         }
-        //callback1(null,'success');
+        console.log("eth1 is on now.");
     });
 }
 
@@ -115,26 +73,27 @@ function turnOffEth1(){
     exec('sudo ifconfig eth1 down', new_env, function (err, stdout, stderr) {
         if (err) {
             console.log('turnOffEth error:'+err);
-            //callback1(err,'failed');
             return;
         }
-        //callback1(null,'success');
+       console.log("eth1 is down now.");
     });
 }
 
 function callbackWiFiInterfaceWlan0(error, flag){ 
     try{
-    console.log("callbackWiFiInterfaceWlan0 called, flag:"+flag);
-    if(flag == "success"){
-       wifiConnectionStatus["connected"] = "true";
-       checkInternetConnectivity();
-    }
-    if(flag == "failed"){
-       wifiConnectionStatus["connected"] = "false";
-       console.log("Turning On Eth1...");
-       turnOnEth1();
-       reportStatus("failed");
-    }
+	    console.log("callbackWiFiInterfaceWlan0 called, flag:"+flag);
+	    if(flag == "success"){
+	       wifiConnectionStatus["connected"] = "true";
+	       checkInternetConnectivity();
+	    }
+	    if(flag == "failed"){
+	       wifiConnectionStatus["connected"] = "false";
+	       console.log("Turning On Eth1...");
+	       turnOnEth1();
+	       sleep(10000).then(function(){
+	       		reportStatus("failed");
+	       });
+	    }
    }catch(error){
       console.log("callbackWiFiInterfaceWlan0() error:"+error);
    }
@@ -172,13 +131,13 @@ function checkInternetConnectivity(){
           .catch(function (error) {
               console.log("GET error:"+error);
               console.log("Internet connectivity is down...");
-              console.log("shutting down wlan0(WiFi) interface...");
+              console.log("shutting down wlan0 (WiFi) interface...");
               turnOffWiFi();
               console.log("sleeping...");
               sleep(10000)
                .then(function(){
-                 reportStatus("failed");
-                 checkInternetConnectivity();
+                    reportStatus("failed");
+                    checkInternetConnectivity();
                });
          });
       }catch(error){
